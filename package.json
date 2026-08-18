@@ -1,0 +1,78 @@
+{
+  "name": "bb-canvas-agent-plugin",
+  "version": "0.1.0",
+  "description": "A persistent canvas that BB agents can inspect and edit while you chat.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://github.com/wdavidturner/bb-canvas-agent-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/wdavidturner/bb-canvas-agent-plugin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wdavidturner/bb-canvas-agent-plugin.git"
+  },
+  "files": [
+    "dist",
+    "server.ts",
+    "app.tsx",
+    "app.css",
+    "globals.d.ts",
+    "skills",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "licenses"
+  ],
+  "engines": {
+    "bb": ">=0.38.0",
+    "bbPluginSdk": ">=0.4.6"
+  },
+  "bb": {
+    "name": "Canvas Agent",
+    "description": "A persistent canvas that BB agents can inspect and edit while you chat.",
+    "branding": {
+      "icon": "PaintBoard"
+    },
+    "server": "./server.ts",
+    "app": "./app.tsx",
+    "skills": [
+      "skills"
+    ]
+  },
+  "keywords": [
+    "bb-plugin",
+    "canvas",
+    "agent",
+    "tldraw"
+  ],
+  "scripts": {
+    "build": "bb plugin build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier . --check --ignore-unknown",
+    "check": "npm run format:check && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "tldraw": "5.3.1",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.6",
+    "@testing-library/react": "16.3.2",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "22.19.7",
+    "@types/react": "19.2.13",
+    "bb-app": "0.38.0",
+    "better-sqlite3": "13.0.3",
+    "cron-parser": "5.10.0",
+    "hono": "4.13.3",
+    "jsdom": "29.0.1",
+    "prettier": "3.8.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "vitest": "4.1.1"
+  }
+}

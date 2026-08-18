@@ -1,0 +1,130 @@
+.canvas-agent-shell {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  background: var(--canvas);
+}
+
+.canvas-agent-status {
+  display: flex;
+  min-height: 46px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 12%, var(--canvas));
+  padding: 7px 12px;
+  background: color-mix(in oklch, var(--ink) 3%, var(--canvas));
+}
+
+.canvas-agent-title-group {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.canvas-agent-mark {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--canvas-agent-status-tone);
+  box-shadow: 0 0 0 3px
+    color-mix(in oklab, var(--canvas-agent-status-tone) 17%, transparent);
+}
+
+.canvas-agent-titles {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.canvas-agent-titles strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-agent-titles span,
+.canvas-agent-trust {
+  color: color-mix(in oklch, var(--ink) 58%, var(--canvas));
+  font-size: 0.6875rem;
+}
+
+.canvas-agent-trust {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in oklch, var(--ink) 11%, var(--canvas));
+  border-radius: 999px;
+  padding: 3px 7px;
+}
+
+.canvas-agent-stage {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.canvas-agent-stage > .tl-container {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-agent-loading {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: color-mix(in oklch, var(--ink) 58%, var(--canvas));
+  font-size: 0.75rem;
+}
+
+.canvas-agent-card {
+  display: flex;
+  width: 100%;
+  max-width: 380px;
+  cursor: pointer;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  border: 1px solid color-mix(in oklch, var(--ink) 13%, var(--canvas));
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: color-mix(in oklch, var(--ink) 3%, var(--canvas));
+  color: var(--ink);
+  text-align: left;
+}
+
+.canvas-agent-card:hover {
+  background: color-mix(in oklch, var(--ink) 6%, var(--canvas));
+}
+
+.canvas-agent-card-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--ink) 8%, var(--canvas));
+}
+
+.canvas-agent-card > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.canvas-agent-card strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.canvas-agent-card small {
+  color: color-mix(in oklch, var(--ink) 58%, var(--canvas));
+  font-size: 0.6875rem;
+}
