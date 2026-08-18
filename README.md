@@ -94,6 +94,7 @@ Use this plugin only with trusted agents and prompts. Read
 - No operating-system file associations.
 - No sandbox for arbitrary JavaScript.
 - Only the latest 200 completed commands are retained for each canvas.
+- A closed canvas accepts at most 100 pending commands.
 
 ## Develop locally
 

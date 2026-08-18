@@ -6,6 +6,7 @@
 - Add an explicit setting for browser-global access.
 - Include camera, zoom, and selection in canvas inspection results.
 - Retain only the latest 200 completed commands for each canvas.
+- Cap closed-canvas pending queues at 100 commands.
 - Degrade circular and oversized command results without failing saved edits.
 - Add focused canvas-runtime tests and GitHub Actions checks.
 

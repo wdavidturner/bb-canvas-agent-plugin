@@ -1,6 +1,9 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { pruneTerminalCommands } from "./command-retention.js";
+import {
+  assertPendingCommandCapacity,
+  pruneTerminalCommands,
+} from "./command-retention.js";
 
 describe("terminal command retention", () => {
   let db: Database.Database;
@@ -50,5 +53,19 @@ describe("terminal command retention", () => {
         )
         .get("canvas-b"),
     ).toEqual({ count: 1 });
+  });
+
+  it("rejects additional work when the pending queue reaches its limit", () => {
+    const insert = db.prepare(
+      "INSERT INTO canvas_commands (id, canvas_id, status, updated_at) VALUES (?, ?, ?, ?)",
+    );
+    insert.run("queued", "canvas-a", "queued", 1);
+    insert.run("running", "canvas-a", "running", 2);
+    insert.run("completed", "canvas-a", "completed", 3);
+
+    expect(() => assertPendingCommandCapacity(db, "canvas-a", 2)).toThrow(
+      "Canvas canvas-a already has 2 pending commands",
+    );
+    expect(() => assertPendingCommandCapacity(db, "canvas-b", 2)).not.toThrow();
   });
 });

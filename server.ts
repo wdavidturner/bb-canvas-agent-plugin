@@ -5,7 +5,10 @@ import {
   type PluginAgentToolResult,
 } from "@get-bb/plugin-sdk";
 import { z } from "zod";
-import { pruneTerminalCommands } from "./command-retention.js";
+import {
+  assertPendingCommandCapacity,
+  pruneTerminalCommands,
+} from "./command-retention.js";
 
 const MAX_SNAPSHOT_BYTES = 16 * 1024 * 1024;
 const MAX_CODE_BYTES = 64 * 1024;
@@ -208,6 +211,7 @@ export default function plugin(bb: BbPluginApi) {
     description: string,
   ): string => {
     ensureCanvas(canvasId, name);
+    assertPendingCommandCapacity(db, canvasId);
     const id = randomUUID();
     const now = Date.now();
     db.prepare(
