@@ -1,6 +1,6 @@
 {
   "name": "bb-canvas-agent-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A persistent canvas that BB agents can inspect and edit while you chat.",
   "license": "MIT",
   "type": "module",
@@ -17,12 +17,15 @@
     "server.ts",
     "app.tsx",
     "app.css",
+    "canvas-runtime.ts",
+    "command-retention.ts",
     "globals.d.ts",
     "skills",
     "README.md",
     "SECURITY.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
+    "CHANGELOG.md",
     "licenses"
   ],
   "engines": {

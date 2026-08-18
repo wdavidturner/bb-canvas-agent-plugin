@@ -23,15 +23,28 @@ function readCommands(value: unknown): ClaimedCommand[] {
 }
 
 describe("Canvas Agent command bridge", () => {
-  it("declares a configurable tldraw license key", async () => {
+  it("declares canvas runtime settings", async () => {
     const { bb, harness } = createFakePluginHost({
       pluginId: "bb-canvas-agent-plugin",
       agentSkillIds: ["canvas-agent"],
     });
     await plugin(bb);
 
+    expect(
+      harness.registrations.settingsDescriptors.allowBrowserGlobals,
+    ).toEqual({
+      type: "boolean",
+      label: "Allow browser globals in agent code",
+      description:
+        "Lets canvas commands access window, document, network APIs, and other shared browser state. Disabled by default. This guardrail is not a security sandbox.",
+      default: false,
+    });
+
     await expect(
-      harness.setSettings({ tldrawLicenseKey: "test-license" }),
+      harness.setSettings({
+        tldrawLicenseKey: "test-license",
+        allowBrowserGlobals: true,
+      }),
     ).resolves.toBeUndefined();
   });
 
@@ -76,6 +89,45 @@ describe("Canvas Agent command bridge", () => {
     });
 
     await expect(toolResult).resolves.toContain("shape:concept-card");
+
+    await expect(
+      harness.callRpc("canvasStatus", { canvasId: "thread:thread-42" }),
+    ).resolves.toMatchObject({ storedCommands: 1, queuedCommands: 0 });
+  });
+
+  it("inspects viewport and selection state with the shapes", async () => {
+    const { bb, harness } = createFakePluginHost({
+      pluginId: "bb-canvas-agent-plugin",
+      agentSkillIds: ["canvas-agent"],
+    });
+    await plugin(bb);
+
+    const toolResult = harness.callAgentTool(
+      "canvas_agent_inspect",
+      {},
+      { threadId: "thread-inspect" },
+    );
+    let commands: ClaimedCommand[] = [];
+    for (let attempt = 0; attempt < 20 && commands.length === 0; attempt += 1) {
+      commands = readCommands(
+        await harness.callRpc("claimCommands", {
+          canvasId: "thread:thread-inspect",
+        }),
+      );
+      if (commands.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+    }
+
+    expect(commands).toHaveLength(1);
+    expect(commands[0]!.code).toContain("editor.getCamera()");
+    expect(commands[0]!.code).toContain("editor.getSelectedShapeIds()");
+    await harness.callRpc("completeCommand", {
+      commandId: commands[0]!.id,
+      resultJson: JSON.stringify({ shapes: [] }),
+      error: null,
+    });
+    await expect(toolResult).resolves.toContain('"shapes":[]');
   });
 
   it("persists the renderer snapshot and reports it through canvas status", async () => {
@@ -101,6 +153,7 @@ describe("Canvas Agent command bridge", () => {
       name: "Thread canvas",
       hasSnapshot: true,
       queuedCommands: 0,
+      storedCommands: 0,
     });
   });
 });

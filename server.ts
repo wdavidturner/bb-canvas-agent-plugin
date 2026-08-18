@@ -5,6 +5,7 @@ import {
   type PluginAgentToolResult,
 } from "@get-bb/plugin-sdk";
 import { z } from "zod";
+import { pruneTerminalCommands } from "./command-retention.js";
 
 const MAX_SNAPSHOT_BYTES = 16 * 1024 * 1024;
 const MAX_CODE_BYTES = 64 * 1024;
@@ -87,6 +88,7 @@ export const canvasRpcContract = defineRpcContract({
         hasSnapshot: z.boolean(),
         updatedAt: z.number(),
         queuedCommands: z.number().int(),
+        storedCommands: z.number().int(),
       })
       .strict(),
   },
@@ -160,6 +162,13 @@ export default function plugin(bb: BbPluginApi) {
       description:
         "Client-side license key from tldraw. BB sends this value to the browser, as required by tldraw. Leave blank for development.",
       default: "",
+    },
+    allowBrowserGlobals: {
+      type: "boolean",
+      label: "Allow browser globals in agent code",
+      description:
+        "Lets canvas commands access window, document, network APIs, and other shared browser state. Disabled by default. This guardrail is not a security sandbox.",
+      default: false,
     },
   });
 
@@ -293,6 +302,10 @@ export default function plugin(bb: BbPluginApi) {
       resultJson: string | null;
       error: string | null;
     }) {
+      const command = readCommand(commandId);
+      if (!command || command.status !== "running") {
+        throw new Error(`Canvas command ${commandId} is not running`);
+      }
       const status = error === null ? "completed" : "failed";
       const result = db
         .prepare(
@@ -304,6 +317,7 @@ export default function plugin(bb: BbPluginApi) {
       if (result.changes !== 1) {
         throw new Error(`Canvas command ${commandId} is not running`);
       }
+      pruneTerminalCommands(db, command.canvas_id);
       return { ok: true as const };
     },
     canvasStatus({ canvasId }: { canvasId: string }) {
@@ -315,32 +329,46 @@ export default function plugin(bb: BbPluginApi) {
             WHERE canvas_id = ? AND status IN ('queued', 'running')`,
         )
         .get(canvasId) as { count: number };
+      const stored = db
+        .prepare(
+          `SELECT COUNT(*) AS count
+             FROM canvas_commands
+            WHERE canvas_id = ?`,
+        )
+        .get(canvasId) as { count: number };
       return {
         canvasId,
         name: row.name,
         hasSnapshot: row.snapshot_json !== null,
         updatedAt: row.updated_at,
         queuedCommands: queued.count,
+        storedCommands: stored.count,
       };
     },
   };
 
   bb.rpc.register(canvasRpcContract, handlers);
 
-  const inspectCode = `return editor.getCurrentPageShapes().map((shape) => ({
-    id: shape.id,
-    type: shape.type,
-    x: shape.x,
-    y: shape.y,
-    rotation: shape.rotation,
-    props: shape.props,
-    meta: shape.meta,
-  }))`;
+  const inspectCode = `return {
+    currentPageId: editor.getCurrentPageId(),
+    camera: editor.getCamera(),
+    zoom: editor.getZoomLevel(),
+    selectedShapeIds: editor.getSelectedShapeIds(),
+    shapes: editor.getCurrentPageShapes().map((shape) => ({
+      id: shape.id,
+      type: shape.type,
+      x: shape.x,
+      y: shape.y,
+      rotation: shape.rotation,
+      props: shape.props,
+      meta: shape.meta,
+    })),
+  }`;
 
   bb.agents.registerTool({
     name: "canvas_agent_inspect",
     description:
-      "Inspect the live tldraw canvas associated with this BB thread. Returns raw tldraw shape records from the current page.",
+      "Inspect the live canvas associated with this BB thread. Returns the current page, camera, zoom, selection, and raw shape records.",
     instructions:
       "Inspect the canvas before changing existing content. If the command queues, ask the user to open the Canvas Agent panel and do not submit a duplicate command.",
     experimental_statusLabels: {
@@ -367,6 +395,7 @@ export default function plugin(bb: BbPluginApi) {
     instructions: [
       "Use editor.createShape/createShapes/updateShape/deleteShapes for mutations.",
       "Use tldraw.createShapeId('stable-name') for stable ids and tldraw.toRichText('label') for text.",
+      "Browser globals are unavailable unless the user enables them in plugin settings. Keep commands scoped to editor and tldraw.",
       "Return a compact verification object from the code.",
       "After a successful edit, include ::canvas-agent{} in your reply so the user can open the live canvas.",
     ].join(" "),

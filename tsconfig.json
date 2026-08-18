@@ -13,6 +13,10 @@
   "include": [
     "server.ts",
     "server.test.ts",
+    "canvas-runtime.ts",
+    "canvas-runtime.test.ts",
+    "command-retention.ts",
+    "command-retention.test.ts",
     "app.tsx",
     "globals.d.ts",
     "vitest.config.ts"
