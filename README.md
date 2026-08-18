@@ -12,6 +12,7 @@ implementation over production isolation and complete file compatibility.
 - A separate Studio canvas in BB navigation.
 - Saved shapes, pages, camera position, zoom, and selection.
 - Native agent tools for inspection and JavaScript execution.
+- Canvas-scoped command guardrails enabled by default.
 - A `bb canvas` command and token-authenticated HTTP bridge.
 - A configurable client-side tldraw license key.
 
@@ -27,7 +28,7 @@ implementation over production isolation and complete file compatibility.
 Run this command:
 
 ```text
-bb plugin install git:https://github.com/wdavidturner/bb-canvas-agent-plugin.git@v0.1.0
+bb plugin install git:https://github.com/wdavidturner/bb-canvas-agent-plugin.git@v0.1.1
 ```
 
 Restart BB if it does not load the plugin automatically.
@@ -37,7 +38,8 @@ Restart BB if it does not load the plugin automatically.
 1. Open **Extensions** in BB.
 2. Select **Canvas Agent**.
 3. Enter the key under **tldraw license key**.
-4. Reload the plugin or refresh the canvas.
+4. Leave **Allow browser globals in agent code** disabled.
+5. Reload the plugin or refresh the canvas.
 
 The key is public client-side configuration. BB sends it to the browser.
 
@@ -74,7 +76,11 @@ navigation canvas.
 ## Trust boundary
 
 `canvas_agent_exec` runs agent-generated JavaScript in BB's browser page. The
-code is not sandboxed. It can affect shared page state outside its canvas.
+runtime shadows common browser globals by default. This prevents ordinary
+commands from accidentally changing BB's shared interface.
+
+This guardrail is not a security sandbox. Determined code can bypass it. The
+plugin setting can also expose browser globals for intentional UI experiments.
 
 Use this plugin only with trusted agents and prompts. Read
 [`SECURITY.md`](SECURITY.md) before installation.
@@ -87,6 +93,8 @@ Use this plugin only with trusted agents and prompts. Read
 - No collaboration or sync server.
 - No operating-system file associations.
 - No sandbox for arbitrary JavaScript.
+- Only the latest 200 completed commands are retained for each canvas.
+- A closed canvas accepts at most 100 pending commands.
 
 ## Develop locally
 

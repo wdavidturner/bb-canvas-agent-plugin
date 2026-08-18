@@ -18,6 +18,7 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { Tldraw, getSnapshot, loadSnapshot, type Editor } from "tldraw";
 import * as tldraw from "tldraw";
+import { runCanvasCode, serializeCanvasResult } from "./canvas-runtime.js";
 import type { canvasRpcContract } from "./server.js";
 import "tldraw/tldraw.css";
 import "./app.css";
@@ -34,13 +35,6 @@ interface CanvasSurfaceProps {
   canvasId: string;
   name: string;
 }
-
-type AsyncCommand = new (
-  ...args: string[]
-) => (editor: Editor, sdk: typeof tldraw) => Promise<unknown>;
-
-const AsyncFunction = Object.getPrototypeOf(async function () {})
-  .constructor as AsyncCommand;
 
 const SNAPSHOT_CACHE_LIMIT = 32;
 const snapshotCache = new Map<string, string>();
@@ -84,15 +78,6 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function resultJson(value: unknown): string {
-  const serialized = JSON.stringify(value ?? null);
-  if (serialized.length <= 256_000) return serialized;
-  return JSON.stringify({
-    truncated: true,
-    preview: serialized.slice(0, 255_000),
-  });
-}
-
 function CanvasSurface({ canvasId, name }: CanvasSurfaceProps) {
   const rpc = useRpc<typeof canvasRpcContract>();
   const settings = useSettings();
@@ -112,6 +97,7 @@ function CanvasSurface({ canvasId, name }: CanvasSurfaceProps) {
     typeof configuredLicenseKey === "string"
       ? configuredLicenseKey.trim() || undefined
       : undefined;
+  const allowBrowserGlobals = settings.values?.allowBrowserGlobals === true;
 
   const snapshotNow = useCallback(
     (editor: Editor) => {
@@ -190,16 +176,13 @@ function CanvasSurface({ canvasId, name }: CanvasSurfaceProps) {
           setState("running");
           setDetail(command.description);
           try {
-            const run = new AsyncFunction(
-              "editor",
-              "tldraw",
-              `"use strict";\n${command.code}`,
-            );
-            const value = await run(editor, tldraw);
+            const value = await runCanvasCode(editor, tldraw, command.code, {
+              allowBrowserGlobals,
+            });
             await saveNow(editor);
             await rpc.call("completeCommand", {
               commandId: command.id,
-              resultJson: resultJson(value),
+              resultJson: serializeCanvasResult(value),
               error: null,
             });
           } catch (error) {
@@ -221,7 +204,7 @@ function CanvasSurface({ canvasId, name }: CanvasSurfaceProps) {
         setDetail("Saved");
       }
     }
-  }, [canvasId, rpc, saveNow]);
+  }, [allowBrowserGlobals, canvasId, rpc, saveNow]);
 
   useRealtime("canvas-command", (payload) => {
     if (
@@ -309,7 +292,11 @@ function CanvasSurface({ canvasId, name }: CanvasSurfaceProps) {
             <span>{detail}</span>
           </div>
         </div>
-        <span className="canvas-agent-trust">local agent bridge</span>
+        <span className="canvas-agent-trust">
+          {allowBrowserGlobals
+            ? "browser access enabled"
+            : "canvas-scoped commands"}
+        </span>
       </div>
       <div className="canvas-agent-stage">
         {settings.isLoading ? (

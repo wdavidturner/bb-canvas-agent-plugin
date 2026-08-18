@@ -27,6 +27,9 @@ The exec code is an async function body with these variables:
 - `editor`: the live tldraw `Editor`
 - `tldraw`: the full tldraw SDK module
 
+Keep commands scoped to `editor` and `tldraw`. Browser globals are unavailable
+unless the user explicitly enables them in the plugin settings.
+
 Create a labelled rectangle:
 
 ```js
